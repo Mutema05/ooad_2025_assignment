@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="514.0" prefWidth="750.0" styleClass="background" stylesheets="@Default.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controllers.AdminController">
+
+    <children>
+        <TabPane prefHeight="514.0" prefWidth="746.0" tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+
+                <!-- HOME TAB -->
+                <Tab text="Home">
+                    <content>
+                        <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                            <children>
+
+                                <AnchorPane layoutX="47.0" layoutY="87.0" prefHeight="86.0" prefWidth="146.0" styleClass="card">
+                                    <children>
+                                        <ImageView fitHeight="80.0" fitWidth="51.0" layoutX="185.0" pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@../Resources/logo.png" />
+                                            </image>
+                                        </ImageView>
+                                        <Label fx:id="totalCustomersLabel" layoutX="90.0" layoutY="43.0" styleClass="Profile_Lable" text="0" />
+                              <Label layoutX="8.0" layoutY="10.0" styleClass="Profile_Lable" text="TOTAL CUSTOMERS" />
+                                    </children>
+                                </AnchorPane>
+                        <Button fx:id="logout33" alignment="TOP_CENTER" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: Transparent;">
+                           <graphic>
+                              <ImageView fitHeight="24.0" fitWidth="32.0">
+                                 <image>
+                                    <Image url="@../Resources/left-arrow.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
+                        </Button>
+                        <ImageView fitHeight="372.0" fitWidth="398.0" layoutX="174.0" layoutY="115.0">
+                           <image>
+                              <Image url="@../Resources/logo.png" />
+                           </image>
+                        </ImageView>
+                        <AnchorPane layoutX="457.0" layoutY="83.0" prefHeight="86.0" prefWidth="146.0" styleClass="card">
+                           <children>
+                              <ImageView fitHeight="80.0" fitWidth="51.0" layoutX="185.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@../Resources/logo.png" />
+                                 </image>
+                              </ImageView>
+                              <Label layoutX="8.0" layoutY="10.0" styleClass="Profile_Lable" text="TOTAL ACCOUNTS" />
+                              <Label fx:id="totalAccountsLabel" layoutX="111.0" layoutY="40.0" styleClass="Profile_Lable" text="0" />
+                           </children>
+                        </AnchorPane>
+                        <Button id="applyInterestToAllCustomers" layoutY="395.0" mnemonicParsing="false" onAction="#applyInterestToAllCustomers" prefWidth="301.0" styleClass="AdminButton" text="Apply interest to all accounts" />
+                            </children>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+
+                <!-- CUSTOMER REGISTRATION -->
+                <Tab text="Customer Registration">
+                    <content>
+                        <AnchorPane prefHeight="400.0" prefWidth="700.0">
+                            <children>
+                                <Label layoutX="195.0" layoutY="20.0" styleClass="Title_Lable" text="Customer Registration" />
+                                <HBox alignment="CENTER" layoutX="144.0" layoutY="121.0" spacing="20.0">
+                                    <children>
+                                        <VBox spacing="20.0">
+                                            <children>
+                                                <Label styleClass="admin_Lable" text="First Name:" />
+                                                <Label styleClass="admin_Lable" text="Surname:" />
+                                                <Label styleClass="admin_Lable" text="Address:" />
+                                                <Label styleClass="admin_Lable" text="Phone Number:" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="44.0">
+                                            <children>
+                                                <TextField fx:id="firstNameField" prefWidth="250.0" style="-fx-text-fill: #7fb0f2;" styleClass="text-field" />
+                                                <TextField fx:id="surnameField" prefWidth="250.0" style="-fx-text-fill: #7fb0f2;" styleClass="text-field" />
+                                                <TextField fx:id="addressField" prefWidth="250.0" style="-fx-text-fill: #7fb0f2;" styleClass="text-field" />
+                                                <TextField fx:id="numberField" prefWidth="250.0" style="-fx-text-fill: #7fb0f2;" styleClass="text-field" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                                <Button layoutX="265.0" layoutY="394.0" onAction="#registerCustomer" prefWidth="250.0" styleClass="AdminButton" text="Register Customer" />
+                        <Button fx:id="logout31" alignment="TOP_CENTER" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: Transparent;">
+                           <graphic>
+                              <ImageView fitHeight="24.0" fitWidth="32.0">
+                                 <image>
+                                    <Image url="@../Resources/left-arrow.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
+                        </Button>
+                            </children>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+                <Tab text="Cheque  Registration">
+                    <content>
+                        <AnchorPane>
+                            <VBox layoutX="50" layoutY="50" spacing="10">
+                                <Label styleClass="Title_Lable" text="Cheque Account Registration" />
+
+                                <TextField id="ChequeUserNameField" fx:id="ChequeUserNameField" promptText="User Name" styleClass="text-field" />
+                                <TextField fx:id="chequeBranchField" promptText="Branch" styleClass="text-field" />
+                                <TextField fx:id="chequeBalanceField" promptText="Balance" styleClass="text-field" />
+                                <TextField fx:id="employerNameField" promptText="Employer Name" styleClass="text-field" />
+                                <TextField fx:id="employerAddressField" promptText="Employer Address" styleClass="text-field" />
+
+                                <Button fx:id="registerChequeAccBtn" onAction="#registerChequeAccount" prefWidth="259.0" styleClass="AdminButton" text="Register Cheque Account" />
+                            </VBox>
+                     <Button fx:id="logout311" alignment="TOP_CENTER" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: Transparent;">
+                        <graphic>
+                           <ImageView fitHeight="24.0" fitWidth="32.0">
+                              <image>
+                                 <Image url="@../Resources/left-arrow.png" />
+                              </image>
+                           </ImageView>
+                        </graphic>
+                     </Button>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+
+                <Tab text="Savings  Registration">
+                    <content>
+                        <AnchorPane>
+                            <VBox layoutX="50" layoutY="50" spacing="10">
+                                <Label styleClass="Title_Lable" text="Savings Account Registration" />
+
+                                <TextField id="SavingsUserNameField" fx:id="SavingsUserNameField" promptText="User Name" styleClass="text-field" />
+                                <TextField fx:id="savingsBranchField" promptText="Branch" styleClass="text-field" />
+                                <TextField fx:id="savingsBalanceField" promptText="Balance" styleClass="text-field" />
+
+                                <Button fx:id="registerSavingsAccBtn" onAction="#registerSavingsAccount" prefWidth="266.0" styleClass="AdminButton" text="Register Savings Account" />
+                            </VBox>
+                     <Button fx:id="logout312" alignment="TOP_CENTER" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: Transparent;">
+                        <graphic>
+                           <ImageView fitHeight="24.0" fitWidth="32.0">
+                              <image>
+                                 <Image url="@../Resources/left-arrow.png" />
+                              </image>
+                           </ImageView>
+                        </graphic>
+                     </Button>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+
+                <Tab text="Investment  Registration">
+                    <content>
+                        <AnchorPane>
+                            <VBox layoutX="50" layoutY="50" spacing="10">
+                                <Label styleClass="Title_Lable" text="Investment Account Registration" />
+
+                                <TextField id="InvestmentUserNameField" fx:id="InvestmentUserNameField" promptText="User Name" styleClass="text-field" />
+                                <TextField fx:id="investBranchField" promptText="Branch" styleClass="text-field" />
+                                <TextField fx:id="investBalanceField" promptText="Balance" styleClass="text-field" />
+
+                                <Button fx:id="registerInvestAccBtn" onAction="#registerInvestmentAccount" prefWidth="283.0" styleClass="AdminButton" text="Register Investment Account" />
+                            </VBox>
+                     <Button fx:id="logout313" alignment="TOP_CENTER" mnemonicParsing="false" onAction="#logout" style="-fx-background-color: Transparent;">
+                        <graphic>
+                           <ImageView fitHeight="24.0" fitWidth="32.0">
+                              <image>
+                                 <Image url="@../Resources/left-arrow.png" />
+                              </image>
+                           </ImageView>
+                        </graphic>
+                     </Button>
+                        </AnchorPane>
+                    </content>
+                </Tab>
+
+
+            </tabs>
+        </TabPane>
+
+    </children>
+</AnchorPane>
