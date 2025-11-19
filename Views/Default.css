@@ -1,0 +1,150 @@
+.container{
+    -fx-background-color:  #333333;
+
+
+
+}
+.vbox{
+-fx-background-color:  #333333;
+-fx-text-fill:#d0e5fe;
+-fx-alignment:center;
+
+}
+.text-field{
+     -fx-border-color:#d0e5fe
+    -fx-background-color: black;   /* background color */
+    -fx-text-fill:  #7fb0f2;          /* text color */
+    -fx-prompt-text-fill: gray;
+}
+.Button{
+    -fx-background-color:   #333333;
+    -fx-text-fill:#7fb0f2;
+}
+.AdminButton {
+    -fx-background-color: #333333;  /* Button background */
+    -fx-text-fill: #7fb0f2;         /* Text color */
+    -fx-font-size: 16px;            /* Font size */
+    -fx-font-weight: bold;           /* Optional: make text bold */
+    -fx-pref-width: 250px;          /* Button width */
+    -fx-pref-height: 70px;          /* Button height */
+    -fx-padding: 10 20 10 20;       /* Top Right Bottom Left padding */
+    -fx-background-radius: 12px;    /* Rounded corners */
+    -fx-border-radius: 12px;        /* Rounded border to match background */
+    -fx-border-color: #7fb0f2;      /* Optional border color */
+    -fx-border-width: 2px;          /* Border thickness */
+    -fx-cursor: hand;               /* Cursor changes to pointer on hover */
+}
+
+/* Optional hover effect */
+.AdminButton:hover {
+    -fx-background-color: #555555;  /* Slightly lighter on hover */
+    -fx-text-fill: #ffffff;          /* Text color on hover */
+}
+.Lable{
+    -fx-text-fill:#7fb0f2;
+
+}
+.Profile_Lable{
+    -fx-text-fill:#7fb0f2;
+    -fx-font-size: 20px;
+
+}
+.admin_Lable{
+    -fx-text-fill:#7fb0f2;
+    -fx-font-size: 30px;
+
+}
+.Title_Lable{
+    -fx-text-fill:#7fb0f2;
+    -fx-font-size: 40px;
+
+}
+.Sub_Title_Lable{
+    -fx-text-fill:#7fb0f2;
+    -fx-font-size: 20px;
+
+}
+.navButton{
+    -fx-text-fill:#d0e5fe;
+    -fx-background-color:   #333333;
+
+}
+.navButtonSelected{
+    -fx-text-fill:#000000;
+    -fx-background-color:   #333333;
+
+}
+.card{
+
+    -fx-background-color: linear-gradient(to right, #4169e1, #333333);
+    -fx-background-radius: 20px;
+    -fx-padding: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5);
+}
+.transaction_card{
+-fx-background-color:  rgb(208, 229, 254,0.2);
+
+}
+.background{
+     -fx-background-color:#edf6ff;
+}
+.card_lable{
+-fx-text-fill:#d0e5fe;
+}
+.credit-card-number {
+    -fx-text-fill:#d0e5fe;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+
+    -fx-letter-spacing: 2px; /* spacing between numbers */
+}
+.credit-card-holder {
+    -fx-font-size: 14px;
+    -fx-font-weight: normal;
+    -fx-text-fill:#d0e5fe;
+    -fx-text-transform: uppercase;
+    }
+.Dropdown{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent; /* optional: removes border */
+    -fx-text-fill:#7fb0f2;
+}
+.Dropdown .text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill:#7fb0f2;
+}
+.accountContainer{
+    -fx-background-color:  #d4e6fd;
+    -fx-background-radius: 20px;
+}
+.table{
+    -fx-background-color:  #d4e6fd;
+    -fx-text-fill:#d0e5fe;
+
+}
+
+
+/* Style for TabPane headers */
+.tab-pane .tab-header-background {
+    -fx-background-color: #333333; /* Background behind the tabs */
+}
+
+.tab-pane .tab {
+    -fx-background-color: #555555; /* Default tab background */
+    -fx-padding: 10 20 10 20;       /* Top Right Bottom Left padding */
+    -fx-border-radius: 5 5 0 0;     /* Rounded top corners */
+    -fx-font-size: 16px;            /* Font size for the tab text */
+    -fx-text-fill: #7fb0f2;         /* Tab text color */
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #4169e1; /* Background of the selected tab */
+    -fx-text-fill: #ffffff;         /* Text color of selected tab */
+    -fx-font-weight: bold;          /* Bold font for selected tab */
+}
+
+.tab-pane .tab-label {
+    -fx-font-size: 16px;            /* Font size of the tab label */
+    -fx-text-fill: #7fb0f2;         /* Text color for unselected tabs */
+}
