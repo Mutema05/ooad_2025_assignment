@@ -3,10 +3,7 @@ package Controllers;
 import Core.Account;
 import Core.Customer;
 import Core.Transaction;
-import DAO.TransactionDAO;
-import DAO.TransactionDAOImpl;
-import DAO.AccountDAO;
-import DAO.AccountDAOImpl;
+import DAO.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -18,6 +15,8 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class TransferController {
@@ -26,9 +25,15 @@ public class TransferController {
     private Connection connection;
     private TransactionDAO transactionDAO;
     private AccountDAO accountDAO;
+    private CustomerDAO customerDAO;
+
 
     @FXML
     private ComboBox<String> senderAccountDropdown;
+    @FXML
+    private Button transferButton;
+    @FXML
+    private Label messageLabel;
 
     @FXML
     private ComboBox<String> receiverAccountDropdown;
@@ -45,82 +50,119 @@ public class TransferController {
     @FXML
     private Label statusLabel;
 
-    // ✅ Correct initialization with both user and connection
     public void initialize(Customer user, Connection con) {
         this.loggedInUser = user;
         this.connection = con;
         this.transactionDAO = new TransactionDAOImpl(con);
         this.accountDAO = new AccountDAOImpl(con);
+        this.customerDAO = new CustomerDAOImpl(connection);
 
-        // Clear dropdowns first
+        List<Customer> allCustomers = customerDAO.getAllCustomers();
+
+        // Populate sender dropdown with user's accounts
         senderAccountDropdown.getItems().clear();
-        receiverAccountDropdown.getItems().clear();
-
-        // Populate sender accounts (current user's)
         for (Account acc : user.getAccounts()) {
             String displayName = acc.getClass().getSimpleName() + " - " + acc.getAccountNumber();
             senderAccountDropdown.getItems().add(displayName);
         }
 
-        // Populate receiver dropdown with all accounts (from DB)
-        for (Account acc : accountDAO.getAllAccounts()) {
-            String displayName = acc.getClass().getSimpleName() + " - " + acc.getAccountNumber();
-            receiverAccountDropdown.getItems().add(displayName);
+        // Disable transfer button if no accounts
+        if (user.getAccounts().isEmpty()) {
+            transferButton.setDisable(true);
+            messageLabel.setText("You do not have any accounts to perform a transfer.");
         }
 
-        // Hide dropdowns if only one account
-        if (user.getAccounts().size() == 1) {
-            senderAccountDropdown.setVisible(false);
-            senderAccountDropdown.setManaged(false);
-            System.out.println("Only one sender account, dropdown hidden.");
-        }
-    }
+        // Setup receiver dropdown as editable
+        receiverAccountDropdown.setEditable(true);
+        receiverAccountDropdown.setPromptText("Type recipient name or number");
 
-    @FXML
-    private void handleTransfer(ActionEvent event) {
-        try {
-            // Sender selection
-            String senderValue = senderAccountDropdown.isVisible()
-                    ? senderAccountDropdown.getValue()
-                    : senderAccountField.getText();
-
-            if (senderValue == null || senderValue.isEmpty()) {
-                statusLabel.setText("Please select or enter a sender account.");
+        // Autocomplete listener
+        receiverAccountDropdown.getEditor().textProperty().addListener((obs, oldText, newText) -> {
+            if (newText == null || newText.isBlank()) {
+                receiverAccountDropdown.hide();
                 return;
             }
 
-            String senderAccountNumber = senderValue.contains(" - ")
-                    ? senderValue.split(" - ")[1]
-                    : senderValue;
+            // Build suggestions
+            List<String> suggestions = new ArrayList<>();
+            for (Customer c : allCustomers) {
+                if (c.getFullName().toLowerCase().contains(newText.toLowerCase())
+                        || c.getPhoneNumber().contains(newText)) {
 
-            Account senderAccount = accountDAO.getByAccountNumber(senderAccountNumber);
+                    // Prefer Cheque account
+                    Account targetAcc = c.getAccounts().stream()
+                            .filter(a -> a.getClass().getSimpleName().equals("Cheque"))
+                            .findFirst()
+                            .orElse(c.getAccounts().isEmpty() ? null : c.getAccounts().get(0));
+
+                    if (targetAcc != null) {
+                        suggestions.add(c.getFullName() + " - " + targetAcc.getClass().getSimpleName()
+                                + " - " + targetAcc.getAccountNumber());
+                    }
+                }
+            }
+
+            // Update ComboBox safely
+            receiverAccountDropdown.getItems().setAll(suggestions);
+            if (!suggestions.isEmpty()) receiverAccountDropdown.show();
+            else receiverAccountDropdown.hide();
+        });
+    }
+    @FXML
+
+    private void handleTransfer(ActionEvent event) {
+        try {
+            // --- Sender account ---
+            String senderValue = senderAccountDropdown.getValue();
+            if (senderValue == null || senderValue.isBlank() || !senderValue.contains(" - ")) {
+                statusLabel.setText("Please select or enter a valid sender account.");
+                return;
+            }
+
+            String senderAccNum = senderValue.split(" - ")[1].trim();
+            Account senderAccount = accountDAO.getByAccountNumber(senderAccNum);
             if (senderAccount == null) {
                 statusLabel.setText("Sender account not found.");
                 return;
             }
 
-            // Receiver selection
-            String receiverValue = receiverAccountDropdown.isVisible()
-                    ? receiverAccountDropdown.getValue()
-                    : receiverAccountField.getText();
-
-            if (receiverValue == null || receiverValue.isEmpty()) {
-                statusLabel.setText("Please select or enter a receiver account.");
+            // --- Receiver account ---
+            String receiverText = receiverAccountDropdown.getEditor().getText().trim();
+            if (receiverText.isEmpty()) {
+                statusLabel.setText("Please enter a recipient.");
                 return;
             }
 
-            String receiverAccountNumber = receiverValue.contains(" - ")
-                    ? receiverValue.split(" - ")[1]
-                    : receiverValue;
+            List<Customer> allCustomers = customerDAO.getAllCustomers();
+            Customer receiverCustomer = null;
+            Account receiverAccount = null;
 
-            Account receiverAccount = accountDAO.getByAccountNumber(receiverAccountNumber);
-            if (receiverAccount == null) {
-                statusLabel.setText("Receiver account not found.");
+            outerLoop:
+            for (Customer c : allCustomers) {
+                for (Account a : c.getAccounts()) {
+                    String display = c.getFullName() + " - " + a.getClass().getSimpleName() + " - " + a.getAccountNumber();
+                    if (display.equalsIgnoreCase(receiverText)) {
+                        receiverCustomer = c;
+                        receiverAccount = a;
+                        break outerLoop;
+                    }
+                }
+            }
+
+            if (receiverCustomer == null || receiverAccount == null) {
+                statusLabel.setText("Recipient not found or has no accounts.");
                 return;
             }
 
-            // Amount validation
-            double amount = Double.parseDouble(senderAmount.getText());
+            // --- Amount validation ---
+            double amount;
+            try {
+                amount = Double.parseDouble(senderAmount.getText().trim());
+            } catch (NumberFormatException e) {
+                statusLabel.setText("Invalid amount entered.");
+                return;
+            }
+
             if (amount <= 0) {
                 statusLabel.setText("Amount must be greater than zero.");
                 return;
@@ -131,43 +173,33 @@ public class TransferController {
                 return;
             }
 
-            // Perform transfer
+            // --- Perform transfer ---
             senderAccount.withdraw(amount);
             receiverAccount.deposit(amount);
 
-            // Update DB balances
             accountDAO.update(senderAccount);
             accountDAO.update(receiverAccount);
 
-            // Create and save transaction
-            Transaction t = new Transaction(
-                    senderAccount.getAccountId(),
-                    "Transfer",
-                    amount,
-                    receiverAccount.getAccountId()
-            );
+            // --- Record transaction ---
+            Transaction t = new Transaction(senderAccount.getAccountId(), "Transfer", amount, receiverAccount.getAccountId());
             transactionDAO.create(t);
-
-            // Add transaction to user (for session view)
             loggedInUser.addTransaction(t);
 
-            // Confirmation alert
+            // --- Confirmation ---
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Transfer Successful");
             alert.setHeaderText("Transfer completed");
-            alert.setContentText(amount + " has been sent to account " + receiverAccountNumber);
+            alert.setContentText("Sent " + amount + " to " + receiverCustomer.getFullName()
+                    + " (" + receiverAccount.getClass().getSimpleName() + " - " + receiverAccount.getAccountNumber() + ")");
             alert.showAndWait();
 
             statusLabel.setText("Transfer successful ✅");
 
-        } catch (NumberFormatException e) {
-            statusLabel.setText("Invalid amount entered.");
         } catch (Exception e) {
             statusLabel.setText("Error during transfer: " + e.getMessage());
             e.printStackTrace();
         }
     }
-
     // ✅ Navigation helpers
     @FXML
     private void openDashboard(ActionEvent event) { loadScene(event, "/views/Dashboard.fxml", "Dashboard"); }

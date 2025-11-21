@@ -92,4 +92,51 @@ public class TransactionDAOImpl implements TransactionDAO {
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
+
+    @Override
+    public List<Transaction> getByCustomerId(int customerId) {
+        List<Transaction> list = new ArrayList<>();
+
+        String sql =
+                "SELECT t.transaction_id, t.transaction_type, t.amount, " +
+                        "a.account_id AS sender_acc, c.first_name || ' ' || c.surname AS sender_name, " +
+                        "a.account_type AS sender_type, " +
+                        "t.target_account_id, " +
+                        "c2.first_name || ' ' || c2.surname AS receiver_name " +
+                        "FROM Transaction t " +
+                        "JOIN Account a ON t.account_id = a.account_id " +
+                        "JOIN Customer c ON a.customer_id = c.customer_id " +
+                        "LEFT JOIN Account a2 ON t.target_account_id = a2.account_id " +
+                        "LEFT JOIN Customer c2 ON a2.customer_id = c2.customer_id " +
+                        "WHERE c.customer_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, customerId);
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+
+                Transaction t = new Transaction(
+                        rs.getInt("sender_acc"),
+                        rs.getString("transaction_type"),
+                        rs.getDouble("amount"),
+                        rs.getObject("target_account_id") != null ? rs.getInt("target_account_id") : null
+                );
+
+                t.setTransactionId(rs.getInt("transaction_id"));
+                t.setSenderName(rs.getString("sender_name"));
+                t.setReceiverName(rs.getString("receiver_name"));
+                t.setAccountType(rs.getString("sender_type"));
+
+                list.add(t);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
 }

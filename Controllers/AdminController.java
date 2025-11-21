@@ -3,8 +3,8 @@ package Controllers;
 import Core.*;
 import DAO.*;
 
-
 import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class AdminController {
 
@@ -31,7 +32,7 @@ public class AdminController {
     @FXML private TextField firstNameField;
     @FXML private TextField surnameField;
     @FXML private TextField addressField;
-    @FXML private TextField numberField;
+    @FXML private TextField numberField; // Phone number field
 
     @FXML private TextField ChequePhoneNumberField;
     @FXML private TextField chequeBranchField;
@@ -46,15 +47,27 @@ public class AdminController {
     @FXML private TextField InvestmentPhoneNumberField;
     @FXML private TextField investBranchField;
     @FXML private TextField investBalanceField;
+
     @FXML private TableView<Customer> customerTable;
     @FXML private TableColumn<Customer, String> nameColumn;
     @FXML private TableColumn<Customer, String> phoneColumn;
     @FXML private TableColumn<Customer, String> accountsColumn;
 
+    @FXML private TextField searchField;
+
+    // Action buttons
+    @FXML private Button editSaveButton;
+    @FXML private Button deleteCustomerButton;
+    @FXML private Button deleteAccountButton;
+
     // ===== DAO and Connection =====
     private Connection connection;
     private CustomerDAO customerDAO;
     private AccountDAO accountDAO;
+
+    private Customer selectedCustomer;
+    private boolean isEditing = false;
+    private FilteredList<Customer> filteredCustomers;
 
     // ===== Constructor =====
     public AdminController() {
@@ -65,18 +78,14 @@ public class AdminController {
 
     // ===== Initialization =====
     public void initialize() {
-        System.out.println("AdminController initialized");
-
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("fullName"));
         phoneColumn.setCellValueFactory(new PropertyValueFactory<>("phoneNumber"));
         accountsColumn.setCellValueFactory(new PropertyValueFactory<>("accountTypes"));
 
         loadCustomersToTable();
+        setupSearch();
+        setupSelectionListener();
         refreshTotals();
-    }
-    private void loadCustomersToTable() {
-        List<Customer> customers = customerDAO.getAllCustomers();
-        customerTable.setItems(FXCollections.observableArrayList(customers));
     }
 
     // ===== Refresh Totals =====
@@ -91,7 +100,6 @@ public class AdminController {
 
         totalCustomersLabel.setText(String.valueOf(totalCustomers));
         totalAccountsLabel.setText(String.valueOf(totalAccounts));
-
     }
 
     // ===== Apply Interest =====
@@ -275,19 +283,178 @@ public class AdminController {
         }
     }
 
-
-    @FXML
-    private List<Customer> getCustomer() {
-        return customerDAO.getAllCustomers();
+    // ===== Load Customers =====
+    private void loadCustomersToTable() {
+        List<Customer> customers = customerDAO.getAllCustomers();
+        filteredCustomers = new FilteredList<>(FXCollections.observableArrayList(customers), p -> true);
+        customerTable.setItems(filteredCustomers);
     }
 
-    // ===== Helper =====
-    private void showAlert(Alert.AlertType type, String title, String message) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void setupSearch() {
+        searchField.textProperty().addListener((obs, oldValue, newValue) -> {
+            filteredCustomers.setPredicate(customer -> {
+                if (newValue == null || newValue.isEmpty()) return true;
+                String lower = newValue.toLowerCase();
+                return customer.getFullName().toLowerCase().contains(lower) ||
+                        customer.getPhoneNumber().contains(lower);
+            });
+        });
+    }
+
+    private void setupSelectionListener() {
+        customerTable.setRowFactory(tv -> {
+            TableRow<Customer> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 2) { // double-click row
+                    Customer clickedCustomer = row.getItem();
+                    openUserDetailsPage(clickedCustomer);
+                }
+            });
+            return row;
+        });
+    }
+    private void openUserDetailsPage(Customer customer) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/views/UserDetails.fxml"));
+            Parent root = loader.load();
+
+            // Pass selected customer to UserDetailsController
+            UserDetailsController controller = loader.getController();
+            controller.initData(customer);
+
+            Stage stage = (Stage) customerTable.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("User Details");
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Error", "Failed to open User Details page.");
+        }
+    }
+
+
+
+    private void displayCustomerDetails() {
+        if (selectedCustomer == null) {
+            firstNameField.clear();
+            surnameField.clear();
+            addressField.clear();
+            numberField.clear();
+            editSaveButton.setDisable(true);
+            deleteCustomerButton.setDisable(true);
+            deleteAccountButton.setDisable(true);
+            return;
+        }
+
+        firstNameField.setText(selectedCustomer.getFirstName());
+        surnameField.setText(selectedCustomer.getSurname());
+        addressField.setText(selectedCustomer.getAddress());
+        numberField.setText(selectedCustomer.getPhoneNumber());
+
+        firstNameField.setEditable(false);
+        surnameField.setEditable(false);
+        addressField.setEditable(false);
+        numberField.setEditable(false);
+
+        editSaveButton.setText("Edit");
+        isEditing = false;
+
+        editSaveButton.setDisable(false);
+        deleteCustomerButton.setDisable(false);
+        deleteAccountButton.setDisable(false);
+    }
+
+    @FXML
+    private void handleEditSave() {
+        if (selectedCustomer == null) return;
+
+        if (!isEditing) {
+            firstNameField.setEditable(true);
+            surnameField.setEditable(true);
+            addressField.setEditable(true);
+            numberField.setEditable(true);
+            editSaveButton.setText("Save");
+            isEditing = true;
+        } else {
+            try {
+                selectedCustomer.setFirstName(firstNameField.getText().trim());
+                selectedCustomer.setSurname(surnameField.getText().trim());
+                selectedCustomer.setAddress(addressField.getText().trim());
+                selectedCustomer.setPhoneNumber(numberField.getText().trim());
+
+                customerDAO.update(selectedCustomer);
+                displayCustomerDetails();
+                loadCustomersToTable();
+                showAlert(Alert.AlertType.INFORMATION, "Success", "Customer updated successfully!");
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to update customer.");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML
+    private void handleDeleteCustomer() {
+        if (selectedCustomer == null) return;
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "This will delete the customer and all associated accounts. Proceed?",
+                ButtonType.YES, ButtonType.NO);
+        alert.setTitle("Confirm Delete");
+        Optional<ButtonType> result = alert.showAndWait();
+
+        if (result.isPresent() && result.get() == ButtonType.YES) {
+            try {
+                List<Account> accounts = accountDAO.getAccountsByCustomerId(selectedCustomer.getCustomerId());
+                for (Account acc : accounts) {
+                    accountDAO.delete(acc.getAccountId());
+                }
+                customerDAO.delete(selectedCustomer.getCustomerId());
+                showAlert(Alert.AlertType.INFORMATION, "Deleted", "Customer and accounts deleted successfully.");
+                loadCustomersToTable();
+                displayCustomerDetails();
+                refreshTotals();
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to delete customer.");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @FXML
+    private void handleDeleteAccount() {
+        if (selectedCustomer == null) return;
+
+        List<Account> accounts = accountDAO.getAccountsByCustomerId(selectedCustomer.getCustomerId());
+        if (accounts.isEmpty()) {
+            showAlert(Alert.AlertType.INFORMATION, "No Accounts", "Customer has no accounts.");
+            return;
+        }
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>(accounts.get(0).getAccountNumber(),
+                accounts.stream().map(Account::getAccountNumber).collect(Collectors.toList()));
+        dialog.setTitle("Delete Account");
+        dialog.setHeaderText("Select an account to delete");
+        Optional<String> result = dialog.showAndWait();
+
+        result.ifPresent(accNum -> {
+            try {
+                Account accToDelete = accounts.stream()
+                        .filter(a -> a.getAccountNumber().equals(accNum))
+                        .findFirst()
+                        .orElse(null);
+                if (accToDelete != null) {
+                    accountDAO.delete(accToDelete.getAccountId());
+                    showAlert(Alert.AlertType.INFORMATION, "Deleted", "Account deleted successfully.");
+                    loadCustomersToTable();
+                    displayCustomerDetails();
+                    refreshTotals();
+                }
+            } catch (Exception e) {
+                showAlert(Alert.AlertType.ERROR, "Error", "Failed to delete account.");
+                e.printStackTrace();
+            }
+        });
     }
 
     // ===== Logout =====
@@ -316,5 +483,14 @@ public class AdminController {
             showAlert(Alert.AlertType.ERROR, "Error", "Failed to load " + fxmlPath);
             e.printStackTrace();
         }
+    }
+
+    // ===== Helper =====
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

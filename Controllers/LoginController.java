@@ -27,17 +27,14 @@ public class LoginController {
         String username = usernameField.getText();
         String password = passwordField.getText();
 
-        if ("admin".equals(username) && "admin".equals(password)) {
+        if ("admin".equalsIgnoreCase(username) && "admin".equalsIgnoreCase(password)) {
             openAdmin(event); // admin login
         } else {
             Customer user = authenticate(username, password);
             if (user != null) {
                 openDashboard(event, user); // customer login
             } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText("Login Failed");
-                alert.setContentText("Invalid username or password. Try again or register at a Mutema Bank branch.");
-                alert.showAndWait();
+                showLoginFailedAlert();
             }
         }
     }
@@ -47,7 +44,7 @@ public class LoginController {
         CustomerDAO customerDAO = new CustomerDAOImpl(connection);
         List<Customer> customers = customerDAO.getAllCustomers();
         for (Customer c : customers) {
-            if (c.getUsername().equals(username) && c.getPassword().equals(password)) {
+            if  (c.getUsername().equalsIgnoreCase(username) && c.getPassword().equals(password)) {
                 return c;
             }
         }
@@ -89,4 +86,12 @@ public class LoginController {
             e.printStackTrace();
         }
     }
+    private void showLoginFailedAlert() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Login Failed");
+        alert.setHeaderText(null);
+        alert.setContentText("Incorrect username or password.\nPlease check your credentials or register at a Mutema Bank branch.");
+        alert.showAndWait();
+    }
+
 }

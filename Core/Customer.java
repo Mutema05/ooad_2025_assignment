@@ -72,4 +72,10 @@ public class Customer {
     public String getFullName() { return firstName + " " + surname; }
 
     public void setAccounts(List<Account> accounts) { this.accounts = accounts; }
+
+    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public void setSurname(String surname) { this.surname = surname; }
+    public void setAddress(String address) { this.address = address; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public void setPassword(String newPassword) { this.password = newPassword; }
 }

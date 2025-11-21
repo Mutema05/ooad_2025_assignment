@@ -3,8 +3,10 @@ package Controllers;
 import Core.Account;
 import Core.Customer;
 import Core.Transaction;
-import DAO.AccountDAO;
-import DAO.AccountDAOImpl;
+import DAO.CustomerDAO;
+import DAO.CustomerDAOImpl;
+import DAO.TransactionDAO;
+import DAO.TransactionDAOImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -22,12 +24,16 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.List;
 import java.util.Optional;
 
 public class DashboardController {
 
     private Customer loggedInUser;
     private Connection connection;
+
+    private TransactionDAO transactionDAO;
+    private CustomerDAO customerDAO;
 
     @FXML private Label userLabel;
     @FXML private TableView<Transaction> transactionTable;
@@ -42,84 +48,150 @@ public class DashboardController {
         this.loggedInUser = user;
         this.connection = con;
 
-        userLabel.setText("Welcome, " + user.getFullName() + "!");
-        accountsContainer.getChildren().clear();
+        this.transactionDAO = new TransactionDAOImpl(connection);
+        this.customerDAO = new CustomerDAOImpl(connection);
 
-        for (Account acc : user.getAccounts()) {
-            AnchorPane card = new AnchorPane();
-            card.setPrefSize(78, 92);
-            card.getStyleClass().add("card");
-
-            Label accountTypeLabel = new Label(acc.getClass().getSimpleName());
-            accountTypeLabel.setLayoutX(14);
-            accountTypeLabel.setLayoutY(10);
-            accountTypeLabel.getStyleClass().add("credit-card-holder");
-
-            ImageView cardImage = new ImageView(new Image(getClass().getResourceAsStream("/Resources/logo.png")));
-            cardImage.setFitWidth(57);
-            cardImage.setFitHeight(67);
-            cardImage.setLayoutX(124.0);
-            cardImage.setLayoutY(20);
-            cardImage.setPreserveRatio(true);
-
-            card.getChildren().addAll(accountTypeLabel, cardImage);
-            accountsContainer.getChildren().add(card);
+        if (user == null) {
+            userLabel.setText("Unknown User");
+            return;
         }
 
-        // Transaction table setup
-        idColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getTransactionId())));
-        typeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTransactionType()));
-        amountColumn.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getAmount()).asObject());
-        senderColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getAccountId())));
-        receiverColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().getTargetAccountId() != null ? String.valueOf(cellData.getValue().getTargetAccountId()) : ""
-        ));
+        userLabel.setText("Welcome, " + user.getFullName() + "!");
 
-        transactionTable.getItems().setAll(loggedInUser.getTransactions());
+        loadAccountsFromDB();
+        loadTransactionsFromDB();
     }
 
-    private void switchScene(ActionEvent event, String fxmlPath, String title, Object controllerUser, Connection con) {
+    // -------------------------
+    //  LOAD ACCOUNTS FROM DB (USER-FRIENDLY)
+    // -------------------------
+    private void loadAccountsFromDB() {
+        accountsContainer.getChildren().clear();
+
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            // Get latest user data including accounts
+            Customer fullUser = customerDAO.read(loggedInUser.getCustomerId());
+            List<Account> accounts = fullUser.getAccounts();
+
+            if (accounts == null || accounts.isEmpty()) {
+                Label emptyLabel = new Label("No accounts found for this user.");
+                emptyLabel.getStyleClass().add("empty-text");
+                accountsContainer.getChildren().add(emptyLabel);
+                return;
+            }
+
+            for (Account acc : accounts) {
+                AnchorPane card = new AnchorPane();
+                card.setPrefSize(160, 100);
+                card.getStyleClass().add("card");
+
+                Label typeLabel = new Label(acc.getClass().getSimpleName() + " Account");
+                typeLabel.setLayoutX(10);
+                typeLabel.setLayoutY(10);
+                typeLabel.getStyleClass().add("card-title");
+
+                ImageView img = new ImageView(new Image(getClass().getResourceAsStream("/Resources/logo.png")));
+                img.setFitWidth(60);
+                img.setFitHeight(60);
+                img.setLayoutX(90);
+                img.setLayoutY(25);
+                img.setPreserveRatio(true);
+
+                card.getChildren().addAll(typeLabel, img);
+                accountsContainer.getChildren().add(card);
+            }
+        } catch (Exception e) {
+            showError("Failed to load accounts from database.");
+            e.printStackTrace();
+        }
+    }
+
+    // -------------------------
+    //  LOAD TRANSACTIONS FROM DB (USER-FRIENDLY)
+    // -------------------------
+    private void loadTransactionsFromDB() {
+        try {
+            List<Transaction> transactions = transactionDAO.getByCustomerId(loggedInUser.getCustomerId());
+
+            idColumn.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getTransactionId())));
+            typeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getTransactionType()));
+            amountColumn.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getAmount()).asObject());
+            senderColumn.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(data.getValue().getAccountId())));
+            receiverColumn.setCellValueFactory(data -> new SimpleStringProperty(
+                    data.getValue().getTargetAccountId() != null ? String.valueOf(data.getValue().getTargetAccountId()) : "—"
+            ));
+
+            if (transactions == null || transactions.isEmpty()) {
+                transactionTable.setPlaceholder(new Label("No transactions found for this user."));
+            } else {
+                transactionTable.getItems().setAll(transactions);
+            }
+        } catch (Exception e) {
+            showError("Failed to load transactions from database.");
+            e.printStackTrace();
+        }
+    }
+
+    // -------------------------
+    //  SCENE SWITCHING
+    // -------------------------
+    private void switchScene(ActionEvent event, String fxml, String title) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
             Parent root = loader.load();
 
-            // Pass user + connection if controller has initialize(Customer, Connection)
             Object controller = loader.getController();
-            try {
-                controller.getClass().getMethod("initialize", Customer.class, Connection.class)
-                        .invoke(controller, controllerUser, con);
-            } catch (NoSuchMethodException nsme) {
-                // fallback: try initialize(Customer)
-                controller.getClass().getMethod("initialize", Customer.class)
-                        .invoke(controller, controllerUser);
-            }
+            controller.getClass().getMethod("initialize", Customer.class, Connection.class)
+                    .invoke(controller, loggedInUser, connection);
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setTitle(title);
             stage.show();
 
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ex) {
+            showError("Failed to load page: " + title);
+            ex.printStackTrace();
         }
     }
 
-    @FXML private void openDashboard(ActionEvent event) { switchScene(event, "/views/Dashboard.fxml", "Dashboard", loggedInUser, connection); }
-    @FXML private void openTransaction(ActionEvent event) { switchScene(event, "/views/Transaction.fxml", "Transaction", loggedInUser, connection); }
-    @FXML private void openCustomer(ActionEvent event) { switchScene(event, "/views/Profile.fxml", "Profile", loggedInUser, connection); }
-    @FXML private void openTransfer(ActionEvent event) { switchScene(event, "/views/Transfer.fxml", "Transfer", loggedInUser, connection); }
-    @FXML private void openWithdraw(ActionEvent event) { switchScene(event, "/views/Withdraw.fxml", "Withdraw", loggedInUser, connection); }
+    private void showError(String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
 
+    // -------------------------
+    //  NAVIGATION
+    // -------------------------
+    @FXML private void openDashboard(ActionEvent e) { switchScene(e, "/views/Dashboard.fxml", "Dashboard"); }
+    @FXML private void openTransaction(ActionEvent e) { switchScene(e, "/views/Transaction.fxml", "Transaction"); }
+    @FXML private void openCustomer(ActionEvent e) { switchScene(e, "/views/Profile.fxml", "Profile"); }
+    @FXML private void openTransfer(ActionEvent e) { switchScene(e, "/views/Transfer.fxml", "Transfer"); }
+    @FXML private void openWithdraw(ActionEvent e) { switchScene(e, "/views/Withdraw.fxml", "Withdraw"); }
+
+    // -------------------------
+    //  LOGOUT
+    // -------------------------
     @FXML
     private void logout(ActionEvent event) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Log Out?");
-        alert.setHeaderText("Do you want to log out?");
-        alert.setContentText("This will log you out and you will need to login again");
+        Alert a = new Alert(Alert.AlertType.CONFIRMATION,
+                "You will need to log in again.", ButtonType.OK, ButtonType.CANCEL);
 
-        Optional<ButtonType> result = alert.showAndWait();
+        Optional<ButtonType> result = a.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            switchScene(event, "/views/Login.fxml", "Login", null, null);
+            try {
+                Parent root = FXMLLoader.load(getClass().getResource("/views/Login.fxml"));
+                Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+                stage.setScene(new Scene(root));
+                stage.setTitle("Login");
+                stage.show();
+            } catch (IOException e) {
+                showError("Failed to load login page.");
+                e.printStackTrace();
+            }
         }
     }
 }

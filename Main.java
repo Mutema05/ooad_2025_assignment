@@ -26,9 +26,12 @@ public class Main extends Application {
         primaryStage.show();
     }
     /*updates
-    * whenthe is no account in the customer the transfer page and profile does not open
-    * log out in some pages does not work
-    * in admin view ,able to search customers names or surname or number
+
+
+
+
+    pressing home does not update
+
     * */
     public static void main(String[] args) {
         launch(args);

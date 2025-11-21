@@ -2,7 +2,8 @@ package Controllers;
 
 import Core.Customer;
 import Core.Transaction;
-import Core.DBConnection;
+import DAO.TransactionDAO;
+import DAO.TransactionDAOImpl;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.event.ActionEvent;
@@ -16,14 +17,17 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
+
 import java.io.IOException;
 import java.sql.Connection;
+import java.util.List;
 import java.util.Optional;
 
 public class TransactionController {
 
     private Customer loggedInUser;
     private Connection connection;
+    private TransactionDAO transactionDAO;
 
     @FXML
     private TableView<Transaction> transactionTable;
@@ -37,25 +41,54 @@ public class TransactionController {
     private TableColumn<Transaction, String> senderColumn;
     @FXML
     private TableColumn<Transaction, String> receiverColumn;
+    @FXML
 
-    /**
-     * Initialize with logged-in user and database connection
-     */
-    public void initialize(Customer user, Connection con){
+
+    public void initialize(Customer user, Connection con) {
         this.loggedInUser = user;
         this.connection = con;
+        this.transactionDAO = new TransactionDAOImpl(connection);
 
-        // Set up table columns
-        idColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getTransactionId())));
-        typeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getTransactionType()));
-        amountColumn.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getAmount()).asObject());
-        senderColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getAccountId())));
-        receiverColumn.setCellValueFactory(cellData -> new SimpleStringProperty(
-                cellData.getValue().getTargetAccountId() != null ? String.valueOf(cellData.getValue().getTargetAccountId()) : ""
-        ));
+        // Table Columns – now user friendly
+        idColumn.setCellValueFactory(c ->
+                new SimpleStringProperty(String.valueOf(c.getValue().getTransactionId()))
+        );
 
-        // Load transactions for logged-in user
-        transactionTable.getItems().setAll(loggedInUser.getTransactions());
+        typeColumn.setCellValueFactory(c ->
+                new SimpleStringProperty(c.getValue().getTransactionType())
+        );
+
+        amountColumn.setCellValueFactory(c ->
+                new SimpleDoubleProperty(c.getValue().getAmount()).asObject()
+        );
+
+        senderColumn.setCellValueFactory(c ->
+                new SimpleStringProperty(c.getValue().getSenderName())
+        );
+
+        receiverColumn.setCellValueFactory(c ->
+                new SimpleStringProperty(
+                        c.getValue().getReceiverName() != null
+                                ? c.getValue().getReceiverName()
+                                : "—"
+                )
+        );
+
+
+
+        loadTransactionsFromDB();
+    }
+
+    private void loadTransactionsFromDB() {
+        try {
+            List<Transaction> list =
+                    transactionDAO.getByCustomerId(loggedInUser.getCustomerId());
+            transactionTable.getItems().setAll(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Failed to load transactions: " + e.getMessage());
+        }
     }
 
     @FXML
@@ -71,23 +104,20 @@ public class TransactionController {
         }
     }
 
-    // Generic FXML loader for navigation
     private void loadFXML(ActionEvent event, String fxmlPath, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
 
-            // Pass user and connection to next controller if needed
             Object controller = loader.getController();
-            if (controller instanceof DashboardController) {
+            if (controller instanceof DashboardController)
                 ((DashboardController) controller).initialize(loggedInUser, connection);
-            } else if (controller instanceof ProfileController) {
+            if (controller instanceof ProfileController)
                 ((ProfileController) controller).initialize(loggedInUser, connection);
-            } else if (controller instanceof TransferController) {
+            if (controller instanceof TransferController)
                 ((TransferController) controller).initialize(loggedInUser, connection);
-            } else if (controller instanceof WithdrawController) {
+            if (controller instanceof WithdrawController)
                 ((WithdrawController) controller).initialize(loggedInUser, connection);
-            }
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
@@ -99,11 +129,9 @@ public class TransactionController {
         }
     }
 
-    // Navigation methods
-    @FXML private void openDashboard(ActionEvent event) { loadFXML(event, "/views/Dashboard.fxml", "Dashboard"); }
-    @FXML private void openTransaction(ActionEvent event) { loadFXML(event, "/views/Transaction.fxml", "Transaction"); }
-    @FXML private void openCustomer(ActionEvent event) { loadFXML(event, "/views/Profile.fxml", "Profile"); }
-    @FXML private void openTransfer(ActionEvent event) { loadFXML(event, "/views/Transfer.fxml", "Transfer"); }
-    @FXML private void openWithdraw(ActionEvent event) { loadFXML(event, "/views/Withdraw.fxml", "Withdraw"); }
-
+    @FXML private void openDashboard(ActionEvent e) { loadFXML(e, "/views/Dashboard.fxml", "Dashboard"); }
+    @FXML private void openTransaction(ActionEvent e) { loadFXML(e, "/views/Transaction.fxml", "Transactions"); }
+    @FXML private void openCustomer(ActionEvent e) { loadFXML(e, "/views/Profile.fxml", "Profile"); }
+    @FXML private void openTransfer(ActionEvent e) { loadFXML(e, "/views/Transfer.fxml", "Transfer"); }
+    @FXML private void openWithdraw(ActionEvent e) { loadFXML(e, "/views/Withdraw.fxml", "Withdraw"); }
 }

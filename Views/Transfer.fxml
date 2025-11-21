@@ -43,7 +43,7 @@
                         <Image url="@../Resources/logo.png" />
                      </image>
                   </ImageView>
-                  <ComboBox fx:id="recieverAccountDropdown" editable="true" layoutX="14.0" layoutY="8.0" prefHeight="26.0" prefWidth="106.0" promptText="Select or type account number" styleClass="Dropdown" />
+                  <ComboBox fx:id="receiverAccountDropdown" editable="true" layoutX="14.0" layoutY="8.0" prefHeight="26.0" prefWidth="106.0" promptText="Select or type account number" styleClass="Dropdown" />
                </children>
             </AnchorPane>
          </children>
@@ -61,7 +61,7 @@
             <Font size="18.0" />
          </font>
       </Label>
-      <Button layoutX="261.0" layoutY="342.0" mnemonicParsing="false" onAction="#handleTransfer" prefHeight="43.0" prefWidth="205.0" styleClass="Button" text="Transfer">
+      <Button fx:id="transferButton" layoutX="261.0" layoutY="342.0" mnemonicParsing="false" onAction="#handleTransfer" prefHeight="43.0" prefWidth="205.0" styleClass="Button" text="Transfer">
          <font>
             <Font size="18.0" />
          </font>
@@ -166,5 +166,6 @@
       <Label layoutX="177.0" layoutY="191.0" styleClass="Sub_Title_Lable" text="Sender Account" />
       <Label layoutX="420.0" layoutY="191.0" styleClass="Sub_Title_Lable" text="Reciever Account" />
       <Label id="statusLabel" fx:id="statusLabel" layoutX="261.0" layoutY="325.0" prefHeight="18.0" prefWidth="290.0" />
+      <Label fx:id="messageLabel" layoutX="303.0" layoutY="174.0" />
    </children>
 </AnchorPane>

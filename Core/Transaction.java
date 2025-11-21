@@ -9,6 +9,10 @@ public class Transaction {
     private double amount;
     private Integer targetAccountId;  // receiver account FK (nullable)
     private LocalDateTime date;
+    private String senderName;
+    private String receiverName;
+    private String accountType;
+
 
     public Transaction(int accountId, String transactionType, double amount, Integer targetAccountId) {
         this.accountId = accountId;
@@ -26,4 +30,13 @@ public class Transaction {
     public double getAmount() { return amount; }
     public Integer getTargetAccountId() { return targetAccountId; }
     public LocalDateTime getDate() { return date; }
+    public String getSenderName() { return senderName; }
+    public void setSenderName(String name) { this.senderName = name; }
+
+    public String getReceiverName() { return receiverName; }
+    public void setReceiverName(String name) { this.receiverName = name; }
+
+    public String getAccountType() { return accountType; }
+    public void setAccountType(String type) { this.accountType = type; }
+
 }
