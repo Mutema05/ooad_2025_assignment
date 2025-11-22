@@ -107,6 +107,8 @@ public class TransferController {
             if (!suggestions.isEmpty()) receiverAccountDropdown.show();
             else receiverAccountDropdown.hide();
         });
+
+
     }
     @FXML
 
